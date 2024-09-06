@@ -1,0 +1,7 @@
+<main class="main">
+  <h1>Forcade</h1>
+  <button (click)="startCall()">Start Call</button>
+  <p>{{ webRTCService.isConnected.value ? 'Connecté' : 'Non connecté' }}</p>
+</main>
+
+<router-outlet/>
