@@ -14,7 +14,7 @@ export class AppComponent {
 
   startCall() {
     this.webRTCService.startCall();
-    this.webRTCService.isConnected.subscribe((isConnected) => {
+    this.webRTCService.isConnected.subscribe(() => {
       this.cdr.detectChanges();
     });
   }
