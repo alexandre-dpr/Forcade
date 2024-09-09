@@ -3,19 +3,21 @@ import * as https from 'https';
 import {Server} from 'https';
 import * as express from 'express';
 import * as mediasoup from 'mediasoup';
-import {Server as SocketIoServer, Socket} from 'socket.io';
-import * as cors from 'cors';
-import {WebRtcTransport} from "mediasoup/node/lib/WebRtcTransport";
 import {Worker} from "mediasoup/node/lib/Worker";
 import {Router} from "mediasoup/node/lib/Router";
-
+import {Producer} from "mediasoup/node/lib/Producer";
+import {Consumer} from "mediasoup/node/lib/Consumer";
+import {MediaKind} from "mediasoup/node/lib/RtpParameters";
+import {Server as SocketIoServer, Socket} from 'socket.io';
+import * as cors from 'cors';
+import {ProducerUser} from "./interface/ProducerUser";
+import {ProducerUserDto} from "./interface/dto/ProducerUserDto";
 
 const app = express();
+app.use(cors());
 const IP: string = '0.0.0.0';
 const INTERNET_IP: string = '192.168.1.25';
 const PORT: number = 3000;
-
-app.use(cors());
 
 
 const server: Server = https.createServer({
@@ -40,7 +42,7 @@ const mediasoupOptions = {
   router: {
     mediaCodecs: [
       {
-        kind: 'audio',
+        kind: 'audio' as MediaKind,
         mimeType: 'audio/opus',
         clockRate: 48000,
         channels: 2,
@@ -50,29 +52,20 @@ const mediasoupOptions = {
 };
 
 
-let producerTransports: Map<string, WebRtcTransport> = new Map();
-let consumerTransports: Map<string, WebRtcTransport> = new Map();
-let producers: Map<string, string> = new Map();
+let producers: Map<string, ProducerUser> = new Map();
 
-function getProducerTransport(socketId: string): WebRtcTransport {
-  const transport = producerTransports.get(socketId);
-  if (transport) {
-    return transport;
+function getProducer(socketId: string): ProducerUser {
+  if (producers.has(socketId)) {
+    return producers.get(socketId)!;
+  } else {
+    const producerUser: ProducerUser = {};
+    producers.set(socketId, producerUser);
+    return producerUser;
   }
-  throw new Error(`Producer transport "${socketId}" not found`);
-}
-
-function getConsumerTransport(socketId: string): WebRtcTransport {
-  const transport = consumerTransports.get(socketId);
-  if (transport) {
-    return transport;
-  }
-  throw new Error(`Consumer transport "${socketId}" not found`);
 }
 
 (async () => {
   const worker: Worker = await mediasoup.createWorker(mediasoupOptions.worker);
-  // @ts-ignore
   const router: Router = await worker.createRouter({mediaCodecs: mediasoupOptions.router.mediaCodecs});
 
   io.on('connection', (socket: Socket) => {
@@ -85,7 +78,7 @@ function getConsumerTransport(socketId: string): WebRtcTransport {
         preferUdp: true,
       });
 
-      producerTransports.set(socket.id, producerTransport);
+      getProducer(socket.id).producerTransport = producerTransport;
 
       callback({
         id: producerTransport.id,
@@ -96,7 +89,7 @@ function getConsumerTransport(socketId: string): WebRtcTransport {
     });
 
     socket.on('connectProducerTransport', async ({transportId, dtlsParameters}, callback) => {
-      await getProducerTransport(socket.id).connect({dtlsParameters});
+      await getProducer(socket.id).producerTransport!.connect({dtlsParameters});
       callback();
     });
 
@@ -108,7 +101,7 @@ function getConsumerTransport(socketId: string): WebRtcTransport {
         preferUdp: true,
       });
 
-      consumerTransports.set(socket.id, consumerTransport);
+      getProducer(socket.id).consumerTransport = consumerTransport;
 
       callback(callback({
         id: consumerTransport.id,
@@ -119,18 +112,19 @@ function getConsumerTransport(socketId: string): WebRtcTransport {
     });
 
     socket.on('connectConsumerTransport', async ({transportId, dtlsParameters}, callback) => {
-      await getConsumerTransport(socket.id).connect({dtlsParameters});
+      await getProducer(socket.id).consumerTransport!.connect({dtlsParameters});
       callback();
     });
 
-    socket.on('produce', async ({kind, rtpParameters}, callback) => {
-      const producer = await getProducerTransport(socket.id).produce({kind, rtpParameters});
-      producers.set(socket.id, producer.id);
-      const producerObject = {
-        id: producer.id,
-      }
-      io.emit('newProducer', producerObject);
-      callback(producerObject);
+    socket.on('produce', async ({kind, rtpParameters, username}, callback) => {
+      const producer: Producer = await getProducer(socket.id).producerTransport!.produce({kind, rtpParameters});
+
+      const producerUser = getProducer(socket.id)
+      producerUser.id = producer.id;
+      producerUser.username = username;
+
+      io.emit('newProducer', ProducerUserDto.from(producerUser));
+      callback(ProducerUserDto.from(producerUser));
     });
 
     socket.on('consume', async ({producerId, rtpCapabilities}, callback) => {
@@ -138,7 +132,7 @@ function getConsumerTransport(socketId: string): WebRtcTransport {
         callback({error: 'Cannot consume'});
         return;
       }
-      const consumer = await getConsumerTransport(socket.id).consume({producerId, rtpCapabilities});
+      const consumer: Consumer = await getProducer(socket.id).consumerTransport!.consume({producerId, rtpCapabilities});
       callback({
         id: consumer.id,
         producerId: producerId,
@@ -148,10 +142,10 @@ function getConsumerTransport(socketId: string): WebRtcTransport {
     });
 
     socket.on('getProducers', async (callback) => {
-      let producerArray: { id: string }[] = [];
-      producers.forEach((value, key) => {
-        if (socket.id !== key) {
-          producerArray.push({id: value});
+      const producerArray: ProducerUserDto[] = [];
+      producers.forEach((producer, socketId) => {
+        if (socket.id !== socketId) {
+          producerArray.push(ProducerUserDto.from(producer));
         }
       });
       callback(producerArray);
@@ -159,12 +153,10 @@ function getConsumerTransport(socketId: string): WebRtcTransport {
 
     socket.on('disconnect', () => {
       if (producers.has(socket.id)) {
-        let producerId = producers.get(socket.id);
-        io.emit('deletedProducer', {id: producerId});
+        let producer = getProducer(socket.id);
+        io.emit('deletedProducer', ProducerUserDto.from(producer));
         producers.delete(socket.id);
       }
-      producerTransports.delete(socket.id);
-      consumerTransports.delete(socket.id);
     });
 
     socket.on('getRouterRtpCapabilities', (callback) => {

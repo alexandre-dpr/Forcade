@@ -5,6 +5,7 @@ import {TransportParameters} from "../../interfaces/TransportParameters";
 import {Producer} from "../../interfaces/Producer";
 import {Data} from "@angular/router";
 import {Transport} from "mediasoup-client/lib/types";
+import {AudioService} from "../audioService/audio.service";
 
 @Injectable({
   providedIn: 'root',
@@ -17,7 +18,7 @@ export class WebRTCService {
   public producer: Producer;
   public producers: Producer[] = [];
 
-  constructor() {
+  constructor(private audioService: AudioService) {
     this.socket = io(`https://${window.location.hostname}:3000`, {
       transports: ['websocket'],
       secure: true,
@@ -29,19 +30,21 @@ export class WebRTCService {
 
     this.socket.on('disconnect', () => {
       console.log('Disconnected from the server');
+      this.audioService.playDisconnectionSound();
     });
 
     this.socket.on('newProducer', (producer: Producer) => {
       if (this.producer) {
-        console.log('New producer available:', producer.id);
+        console.log(`New producer available: ${producer.username} - ${producer.id}`);
         this.producers.push(producer);
         this.consumeMedia(producer);
+        this.audioService.playJoinedSound();
       }
     });
 
     this.socket.on('deletedProducer', (producer: Producer) => {
       if (this.producer) {
-        console.log('Producer left:', producer.id);
+        console.log(`Producer deleted: ${producer.username} - ${producer.id}`);
         this.producers = this.producers.filter(p => p.id !== producer.id);
       }
     });
@@ -87,9 +90,10 @@ export class WebRTCService {
       });
 
       this.producerTransport.on('produce', async ({kind, rtpParameters}: any, callback: any) => {
-        this.socket.emit('produce', {kind, rtpParameters}, (response: any) => {
+        const username = window.prompt('Enter your username');
+        this.socket.emit('produce', {kind, rtpParameters, username}, (response: Producer) => {
           this.producer = response;
-          callback({id: response});
+          callback(response);
         });
       });
 
@@ -121,6 +125,7 @@ export class WebRTCService {
 
       if (audioTrack && this.producerTransport && !this.producerTransport.closed) {
         await this.producerTransport.produce({track: audioTrack});
+        this.audioService.playConnectionSound();
       }
 
     } catch (error) {
