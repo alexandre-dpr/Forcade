@@ -1,20 +1,26 @@
 {
   "name": "signaling",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.4",
+    "@types/socket.io": "^3.0.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "https": "^1.0.0",
     "mediasoup": "^3.14.14",
     "socket.io": "^4.7.5",
+    "typescript": "^5.5.4",
     "ws": "^8.18.0"
   }
 }

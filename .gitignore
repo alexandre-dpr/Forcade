@@ -1,4 +1,6 @@
 /.idea/
 /frontend/.angular/
 /frontend/node_modules/
+/frontend/dist/
 /signaling/node_modules/
+/signaling/dist/
