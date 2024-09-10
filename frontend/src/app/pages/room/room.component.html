@@ -1,0 +1,15 @@
+<div>
+  <p>My id: {{webRTCService.producer ? webRTCService.producer.username + ' - ' + webRTCService.producer.id : 'Not connected'}} </p>
+  <p *ngIf="webRTCService.room && webRTCService.producer">My room: {{webRTCService.room.name}} - {{webRTCService.room.id}}</p>
+
+  <hr/>
+
+  <ng-container *ngIf="webRTCService.producers.length > 0">
+    <p>Other clients:</p>
+    <ul>
+      <ng-container *ngFor="let producer of webRTCService.producers">
+        <li>{{producer.username}} - {{producer.id}}</li>
+      </ng-container>
+    </ul>
+  </ng-container>
+</div>

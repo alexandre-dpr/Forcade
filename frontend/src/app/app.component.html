@@ -1,19 +1,1 @@
-<main class="main">
-  <h1>Forcade</h1>
-  <button *ngIf="!webRTCService.producer" (click)="startCall()">Start Call</button>
-
-  <p>My id: {{webRTCService.producer ? webRTCService.producer.username + ' - ' + webRTCService.producer.id : 'Not connected'}} </p>
-
-  <hr/>
-
-  <ng-container *ngIf="webRTCService.producers.length > 0">
-    <p>Other clients:</p>
-    <ul>
-      <ng-container *ngFor="let producer of webRTCService.producers">
-        <li>{{producer.username}} - {{producer.id}}</li>
-      </ng-container>
-    </ul>
-  </ng-container>
-</main>
-
 <router-outlet/>

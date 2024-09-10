@@ -6,6 +6,9 @@ import {Producer} from "../../interfaces/Producer";
 import {Data} from "@angular/router";
 import {Transport} from "mediasoup-client/lib/types";
 import {AudioService} from "../audioService/audio.service";
+import {Room} from "../../interfaces/Room";
+import {ErrorMessages} from "../../enum/ErrorMessages";
+import {BehaviorSubject} from "rxjs";
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +20,9 @@ export class WebRTCService {
   private consumerTransport: Transport<Data>;
   public producer: Producer;
   public producers: Producer[] = [];
+  public room: Room;
+
+  public connected = new BehaviorSubject<boolean>(false);
 
   constructor(private audioService: AudioService) {
     this.socket = io(`https://${window.location.hostname}:3000`, {
@@ -26,11 +32,13 @@ export class WebRTCService {
 
     this.socket.on('connect', () => {
       console.log('Connected to the server');
+      this.connected.next(true);
     });
 
     this.socket.on('disconnect', () => {
       console.log('Disconnected from the server');
       this.audioService.playDisconnectionSound();
+      this.connected.next(false);
     });
 
     this.socket.on('newProducer', (producer: Producer) => {
@@ -53,11 +61,24 @@ export class WebRTCService {
     this.loadDevice();
   }
 
-  async startCall() {
+  async startCall(room: Room) {
+    this.room = room;
     await this.createProducerTransport();
     await this.createConsumerTransport();
     await this.produceMedia();
     this.getProducers();
+  }
+
+  public async getRoomInfo(roomId: string): Promise<{ hasName: boolean, hasPassword: boolean }> {
+    return new Promise((resolve, reject) => {
+      this.socket.emit('getRoomInfo', roomId, (roomInfo: { hasName: boolean, hasPassword: boolean }) => {
+        if (roomInfo) {
+          resolve(roomInfo);
+        } else {
+          reject(new Error('Failed to get room info'));
+        }
+      });
+    });
   }
 
   private async requestMediaPermissions(): Promise<MediaStream> {
@@ -75,7 +96,9 @@ export class WebRTCService {
   }
 
   private async createProducerTransport() {
-    this.socket.emit('createProducerTransport', (transport: TransportParameters) => {
+    this.socket.emit('createProducerTransport', this.room, (transport: TransportParameters) => {
+      this.checkIfError(transport);
+
       this.producerTransport = this.device.createSendTransport({
         id: transport.id,
         iceParameters: transport.iceParameters,
@@ -84,16 +107,24 @@ export class WebRTCService {
       });
 
       this.producerTransport.on('connect', ({dtlsParameters}: any, callback: any) => {
-        this.socket.emit('connectProducerTransport', {dtlsParameters}, () => {
+        this.socket.emit('connectProducerTransport', {joinedRoom: this.room, dtlsParameters}, (message: any) => {
+          this.checkIfError(message);
           callback();
         });
       });
 
       this.producerTransport.on('produce', async ({kind, rtpParameters}: any, callback: any) => {
         const username = window.prompt('Enter your username');
-        this.socket.emit('produce', {kind, rtpParameters, username}, (response: Producer) => {
-          this.producer = response;
-          callback(response);
+        this.socket.emit('produce', {
+          joinedRoom: this.room,
+          kind,
+          rtpParameters,
+          username
+        }, (createdProducer: Producer, joinedRoom: Room) => {
+          this.checkIfError(createdProducer);
+          this.producer = createdProducer;
+          this.room = joinedRoom;
+          callback(createdProducer);
         });
       });
 
@@ -101,7 +132,9 @@ export class WebRTCService {
   }
 
   private async createConsumerTransport() {
-    this.socket.emit('createConsumerTransport', (transport: TransportParameters) => {
+    this.socket.emit('createConsumerTransport', this.room, (transport: TransportParameters) => {
+      this.checkIfError(transport);
+
       this.consumerTransport = this.device.createRecvTransport({
         id: transport.id,
         iceParameters: transport.iceParameters,
@@ -110,7 +143,8 @@ export class WebRTCService {
       });
 
       this.consumerTransport.on('connect', ({dtlsParameters}: any, callback: any) => {
-        this.socket.emit('connectConsumerTransport', {dtlsParameters}, () => {
+        this.socket.emit('connectConsumerTransport', {joinedRoom: this.room, dtlsParameters}, (message: any) => {
+          this.checkIfError(message);
           callback();
         });
       });
@@ -137,11 +171,12 @@ export class WebRTCService {
     const rtpCapabilities = this.device.rtpCapabilities;
 
     if (this.producer.id !== producer.id) {
-      this.socket.emit('consume', {producerId: producer.id, rtpCapabilities}, async (data: any) => {
-        if (data.error) {
-          console.error(data.error);
-          return;
-        }
+      this.socket.emit('consume', {
+        joinedRoom: this.room,
+        producerId: producer.id,
+        rtpCapabilities
+      }, async (data: any) => {
+        this.checkIfError(data);
 
         const consumer = await this.consumerTransport.consume({
           id: data.id,
@@ -170,11 +205,32 @@ export class WebRTCService {
   }
 
   private getProducers() {
-    this.socket.emit('getProducers', (producers: Producer[]) => {
+    this.socket.emit('getProducers', this.room, (producers: Producer[]) => {
+
+      this.checkIfError(producers, ((error: string) => {
+        console.log('Error getting producers:', error);
+        if (error === ErrorMessages.ROOM_NOT_INITIALIZED) {
+          window.location.reload();
+        }
+      }));
+
       producers.forEach(async (producer: Producer) => {
+        console.log('calling consumeMedia from getProducers');
+        console.log('producers', producers);
+        console.log('producer', producer);
         await this.consumeMedia(producer);
         this.producers.push(producer);
       });
     });
+  }
+
+  private checkIfError(data: any, callback?: any) {
+    if (data.error) {
+      if (callback) {
+        callback(data.error);
+      } else {
+        throw new Error(data.error);
+      }
+    }
   }
 }

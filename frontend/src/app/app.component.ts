@@ -1,6 +1,5 @@
 import {Component} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
-import {WebRTCService} from './services/webRTC/web-rtc.service';
 import {NgForOf, NgIf} from "@angular/common";
 
 @Component({
@@ -11,10 +10,4 @@ import {NgForOf, NgIf} from "@angular/common";
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  constructor(public webRTCService: WebRTCService) {
-  }
-
-  startCall() {
-    this.webRTCService.startCall();
-  }
 }
