@@ -9,6 +9,7 @@ import {AudioService} from "../audioService/audio.service";
 import {Room} from "../../interfaces/Room";
 import {ErrorMessages} from "../../enum/ErrorMessages";
 import {BehaviorSubject} from "rxjs";
+import {RoomInfo} from "../../interfaces/RoomInfo";
 
 @Injectable({
   providedIn: 'root',
@@ -21,6 +22,7 @@ export class WebRTCService {
   public producer: Producer;
   public producers: Producer[] = [];
   public room: Room;
+  public username: string;
 
   public connected = new BehaviorSubject<boolean>(false);
 
@@ -54,6 +56,7 @@ export class WebRTCService {
       if (this.producer) {
         console.log(`Producer deleted: ${producer.username} - ${producer.id}`);
         this.producers = this.producers.filter(p => p.id !== producer.id);
+        this.audioService.playLeftSound();
       }
     });
 
@@ -61,17 +64,18 @@ export class WebRTCService {
     this.loadDevice();
   }
 
-  async startCall(room: Room) {
+  async startCall(room: Room, username: string) {
     this.room = room;
+    this.username = username;
     await this.createProducerTransport();
     await this.createConsumerTransport();
     await this.produceMedia();
     this.getProducers();
   }
 
-  public async getRoomInfo(roomId: string): Promise<{ hasName: boolean, hasPassword: boolean }> {
+  public async getRoomInfo(roomId: string): Promise<RoomInfo> {
     return new Promise((resolve, reject) => {
-      this.socket.emit('getRoomInfo', roomId, (roomInfo: { hasName: boolean, hasPassword: boolean }) => {
+      this.socket.emit('getRoomInfo', roomId, (roomInfo: RoomInfo) => {
         if (roomInfo) {
           resolve(roomInfo);
         } else {
@@ -114,12 +118,11 @@ export class WebRTCService {
       });
 
       this.producerTransport.on('produce', async ({kind, rtpParameters}: any, callback: any) => {
-        const username = window.prompt('Enter your username');
         this.socket.emit('produce', {
           joinedRoom: this.room,
           kind,
           rtpParameters,
-          username
+          username: this.username
         }, (createdProducer: Producer, joinedRoom: Room) => {
           this.checkIfError(createdProducer);
           this.producer = createdProducer;
@@ -225,7 +228,7 @@ export class WebRTCService {
   }
 
   private checkIfError(data: any, callback?: any) {
-    if (data.error) {
+    if (data && data.error) {
       if (callback) {
         callback(data.error);
       } else {

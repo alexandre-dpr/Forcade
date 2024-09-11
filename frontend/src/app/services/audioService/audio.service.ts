@@ -23,6 +23,10 @@ export class AudioService {
     this.playSound(this.BASE_FOLDER + '/joined.mp3')
   }
 
+  public playLeftSound() {
+    this.playSound(this.BASE_FOLDER + '/left.mp3')
+  }
+
   private playSound(sound: string) {
     const audio = new Audio(sound);
     audio.volume = this.masterVolume;

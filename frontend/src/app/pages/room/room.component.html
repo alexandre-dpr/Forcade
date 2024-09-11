@@ -1,6 +1,9 @@
 <div>
-  <p>My id: {{webRTCService.producer ? webRTCService.producer.username + ' - ' + webRTCService.producer.id : 'Not connected'}} </p>
-  <p *ngIf="webRTCService.room && webRTCService.producer">My room: {{webRTCService.room.name}} - {{webRTCService.room.id}}</p>
+  <p>My
+    id: {{webRTCService.producer ? webRTCService.producer.username + ' - ' + webRTCService.producer.id : 'Not connected'}} </p>
+  <p *ngIf="webRTCService.room && webRTCService.producer">
+    My room: {{webRTCService.room.name}} - {{webRTCService.room.id}}
+  </p>
 
   <hr/>
 
@@ -12,4 +15,40 @@
       </ng-container>
     </ul>
   </ng-container>
+
+  <div [formGroup]="joinForm" *ngIf="roomInfo && !webRTCService.producer" class="d-flex flex-column align-center">
+    <mat-form-field *ngIf="!roomInfo.hasName" class="w-35">
+      <mat-label>Room name</mat-label>
+      <input matInput formControlName="name"/>
+    </mat-form-field>
+
+    <mat-form-field *ngIf="!roomInfo.hasName || roomInfo.hasPassword" class="w-35">
+      <mat-label>Password</mat-label>
+      <input matInput formControlName="password" [type]="hide() ? 'password' : 'text'"/>
+      <button
+        mat-icon-button
+        matSuffix
+        (click)="clickEvent($event)"
+        [attr.aria-label]="'Hide password'"
+        [attr.aria-pressed]="hide()"
+      >
+        <mat-icon>{{hide() ? 'visibility_off' : 'visibility'}}</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <mat-form-field class="w-35">
+      <mat-label>Username</mat-label>
+      <input matInput formControlName="username"/>
+    </mat-form-field>
+
+    <button mat-flat-button
+            (click)="startCall()"
+            [disabled]="joinForm.invalid"
+            class="w-35"
+    >Se connecter</button>
+  </div>
+
+  <div *ngIf="!roomInfo">
+    <mat-spinner/>
+  </div>
 </div>

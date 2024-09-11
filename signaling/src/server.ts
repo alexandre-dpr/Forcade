@@ -278,8 +278,9 @@ function hasRoomPermission(room: Room): boolean {
     socket.on('getRoomInfo', (roomId: string, callback) => {
       callback(
         {
+          id: roomId,
           hasName: rooms.has(roomId),
-          hasPassword: !rooms.has(roomId) || rooms.get(roomId)!.password !== ''
+          hasPassword: rooms.has(roomId) && rooms.get(roomId)!.password !== ''
         }
       );
     });
