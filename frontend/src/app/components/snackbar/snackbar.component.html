@@ -1,0 +1,18 @@
+<div class="d-flex align-center justify-center snackbar-container"
+     [ngClass]="{
+      'snackbar-success': data.severity === 'success',
+      'snackbar-error': data.severity === 'error',
+      'snackbar-warning': data.severity === 'warning',
+      'snackbar-info': data.severity === 'info'
+     }"
+>
+  <div class="ml-2 mt-1">
+    <mat-icon *ngIf="data.severity === 'success'">check_circle</mat-icon>
+    <mat-icon *ngIf="data.severity === 'error'">error</mat-icon>
+    <mat-icon *ngIf="data.severity === 'warning'">warning</mat-icon>
+    <mat-icon *ngIf="data.severity === 'info'">info</mat-icon>
+  </div>
+  <div matSnackBarLabel>
+    {{ data.message }}
+  </div>
+</div>

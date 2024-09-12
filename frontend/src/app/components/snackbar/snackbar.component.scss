@@ -1,0 +1,23 @@
+.snackbar-container {
+  border-radius: 5px;
+}
+
+.snackbar-success {
+  background-color: #388E3C;
+}
+
+.snackbar-error {
+  background-color: #D32F2F;
+}
+
+.snackbar-warning {
+  background-color: #c27d01;
+}
+
+.snackbar-info {
+  background-color: #1976D2;
+}
+
+::ng-deep .mat-mdc-snackbar-surface {
+  padding: 0 !important;
+}

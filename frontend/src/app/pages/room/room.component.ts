@@ -6,8 +6,7 @@ import {RouteNames} from "../../enum/RouteNames";
 import {RoomInfo} from "../../interfaces/RoomInfo";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {MatFormField} from "@angular/material/form-field";
-import {MatInput} from "@angular/material/input";
-import {MatInputModule} from "@angular/material/input";
+import {MatInput, MatInputModule} from "@angular/material/input";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {MatButton, MatIconButton} from "@angular/material/button";
 import {MatIcon} from "@angular/material/icon";
@@ -72,8 +71,6 @@ export class RoomComponent {
     });
   }
 
-  // TODO Ajouter un formulaire pour rejoindre une room
-  // TODO Après avoir appelé getRoomInfo, on affiche un formulaire avec les champs requis
   startCall() {
     const room = {
       id: this.roomInfo.id,
@@ -84,6 +81,7 @@ export class RoomComponent {
   }
 
   hide = signal(true);
+
   clickEvent(event: MouseEvent) {
     this.hide.set(!this.hide());
     event.stopPropagation();
