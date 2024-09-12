@@ -1,5 +1,5 @@
 import {Component, signal} from '@angular/core';
-import {NgForOf, NgIf} from "@angular/common";
+import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
 import {WebRTCService} from "../../services/webRTC/web-rtc.service";
 import {ActivatedRoute, Router} from "@angular/router";
 import {RouteNames} from "../../enum/RouteNames";
@@ -10,6 +10,7 @@ import {MatInput, MatInputModule} from "@angular/material/input";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {MatButton, MatIconButton} from "@angular/material/button";
 import {MatIcon} from "@angular/material/icon";
+import {CallComponent} from "../../components/call/call.component";
 
 
 @Component({
@@ -25,7 +26,9 @@ import {MatIcon} from "@angular/material/icon";
     MatProgressSpinner,
     MatButton,
     MatIcon,
-    MatIconButton
+    MatIconButton,
+    KeyValuePipe,
+    CallComponent
   ],
   templateUrl: './room.component.html',
   styleUrl: './room.component.scss'

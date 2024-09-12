@@ -1,22 +1,12 @@
 <div>
-  <p>My
-    id: {{webRTCService.producer ? webRTCService.producer.username + ' - ' + webRTCService.producer.id : 'Not connected'}} </p>
   <p *ngIf="webRTCService.room && webRTCService.producer">
     My room: {{webRTCService.room.name}} - {{webRTCService.room.id}}
   </p>
 
   <hr/>
 
-  <ng-container *ngIf="webRTCService.producers.length > 0">
-    <p>Other clients:</p>
-    <ul>
-      <ng-container *ngFor="let producer of webRTCService.producers">
-        <li>{{producer.username}} - {{producer.id}}</li>
-      </ng-container>
-    </ul>
-  </ng-container>
-
-  <div [formGroup]="joinForm" *ngIf="roomInfo && !webRTCService.producer" class="d-flex flex-column align-center">
+  <div [formGroup]="joinForm" *ngIf="roomInfo && !webRTCService.producer"
+       class="d-flex flex-column align-center">
     <mat-form-field *ngIf="!roomInfo.hasName" class="w-35">
       <mat-label>Room name</mat-label>
       <input matInput formControlName="name"/>
@@ -45,10 +35,15 @@
             (click)="startCall()"
             [disabled]="joinForm.invalid"
             class="w-35"
-    >Se connecter</button>
+    >Se connecter
+    </button>
   </div>
 
   <div *ngIf="!roomInfo">
     <mat-spinner/>
   </div>
+
+  <ng-template [ngIf]="webRTCService.producer">
+    <app-call/>
+  </ng-template>
 </div>

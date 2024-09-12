@@ -20,9 +20,11 @@ export class WebRTCService {
   private producerTransport: Transport<Data>;
   private consumerTransport: Transport<Data>;
   public producer: Producer;
-  public producers: Producer[] = [];
+  public producers: Map<string, Producer> = new Map();
   public room: Room;
   public username: string;
+  public masterGain = 1;
+  public soundMuted = false;
 
   public connected = new BehaviorSubject<boolean>(false);
 
@@ -46,7 +48,7 @@ export class WebRTCService {
     this.socket.on('newProducer', (producer: Producer) => {
       if (this.producer) {
         console.log(`New producer available: ${producer.username} - ${producer.id}`);
-        this.producers.push(producer);
+        this.producers.set(producer.id, producer);
         this.consumeMedia(producer);
         this.audioService.playJoinedSound();
       }
@@ -55,13 +57,14 @@ export class WebRTCService {
     this.socket.on('deletedProducer', (producer: Producer) => {
       if (this.producer) {
         console.log(`Producer deleted: ${producer.username} - ${producer.id}`);
-        this.producers = this.producers.filter(p => p.id !== producer.id);
+        this.producers.delete(producer.id);
         this.audioService.playLeftSound();
       }
     });
 
     this.device = new mediasoupClient.Device();
     this.loadDevice();
+    this.getMasterGain();
   }
 
   async startCall(room: Room, username: string) {
@@ -189,9 +192,22 @@ export class WebRTCService {
         });
 
         const stream = new MediaStream();
+        consumer.track.enabled = !this.soundMuted;
         stream.addTrack(consumer.track);
+        producer.track = consumer.track;
         const audio = new Audio();
         audio.srcObject = stream;
+
+        const audioContext = new AudioContext();
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = this.masterGain;
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        if (this.producers.has(producer.id)) {
+          this.producers.get(producer.id)!.gainNode = gainNode;
+        }
+
         audio.play().catch(error => console.error('Error playing audio:', error));
       });
     } else {
@@ -222,7 +238,7 @@ export class WebRTCService {
         console.log('producers', producers);
         console.log('producer', producer);
         await this.consumeMedia(producer);
-        this.producers.push(producer);
+        this.producers.set(producer.id, producer);
       });
     });
   }
@@ -235,5 +251,39 @@ export class WebRTCService {
         throw new Error(data.error);
       }
     }
+  }
+
+  updateGain(producerId: string, value: number) {
+    if (this.producers.has(producerId)) {
+      const producer = this.producers.get(producerId);
+      if (producer && producer.gainNode) {
+        producer.gainNode.gain.value = value;
+      }
+    }
+  }
+
+  getMasterGain() {
+    const masterGain = localStorage.getItem('masterGain');
+    if (masterGain) {
+      this.masterGain = parseFloat(masterGain);
+    }
+  }
+
+  updateMasterGain(value: number) {
+    this.producers.forEach((producer) => {
+      if (producer.gainNode) {
+        producer.gainNode.gain.value = value;
+      }
+    });
+    localStorage.setItem('masterGain', value.toString());
+  }
+
+  muteToggle() {
+    this.producers.forEach((producer) => {
+      if (producer.track) {
+        producer.track.enabled = !producer.track.enabled;
+      }
+    });
+    this.soundMuted = !this.soundMuted;
   }
 }
