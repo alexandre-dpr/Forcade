@@ -1,0 +1,16 @@
+{
+  "common": {
+    "appName": "Forcade"
+  },
+  "home": {
+    "startCall": "Démarrer l'appel"
+  },
+  "room": {
+    "myRoom": "Ma salle :",
+    "roomName": "Nom de la salle",
+    "roomNamePlaceholder": "Salle de discussion",
+    "roomPassword": "Mot de passe",
+    "username": "Nom d'utilisateur",
+    "joinCall": "Rejoindre l'appel"
+  }
+}

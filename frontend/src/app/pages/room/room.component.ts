@@ -11,6 +11,7 @@ import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {MatButton, MatIconButton} from "@angular/material/button";
 import {MatIcon} from "@angular/material/icon";
 import {CallComponent} from "../../components/call/call.component";
+import {TranslateModule, TranslateService} from "@ngx-translate/core";
 
 
 @Component({
@@ -28,7 +29,8 @@ import {CallComponent} from "../../components/call/call.component";
     MatIcon,
     MatIconButton,
     KeyValuePipe,
-    CallComponent
+    CallComponent,
+    TranslateModule
   ],
   templateUrl: './room.component.html',
   styleUrl: './room.component.scss'
@@ -38,12 +40,12 @@ export class RoomComponent {
   roomInfo: RoomInfo;
   joinForm: FormGroup;
 
-  constructor(public webRTCService: WebRTCService, private route: ActivatedRoute, private router: Router) {
+  constructor(public webRTCService: WebRTCService, private route: ActivatedRoute, private router: Router, private translate: TranslateService) {
   }
 
   ngOnInit(): void {
     this.joinForm = new FormGroup({
-      name: new FormControl('My room', {nonNullable: true}),
+      name: new FormControl(this.translate.instant('room.roomNamePlaceholder'), {nonNullable: true}),
       password: new FormControl('', {nonNullable: true}),
       username: new FormControl('', Validators.required)
     });

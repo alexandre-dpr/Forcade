@@ -1,6 +1,6 @@
 <div>
   <p *ngIf="webRTCService.room && webRTCService.producer">
-    My room: {{webRTCService.room.name}} - {{webRTCService.room.id}}
+    {{ 'room.myRoom' | translate }} {{webRTCService.room.name}} - {{webRTCService.room.id}}
   </p>
 
   <hr/>
@@ -8,12 +8,12 @@
   <div [formGroup]="joinForm" *ngIf="roomInfo && !webRTCService.producer"
        class="d-flex flex-column align-center">
     <mat-form-field *ngIf="!roomInfo.hasName" class="w-35">
-      <mat-label>Room name</mat-label>
+      <mat-label>{{ 'room.roomName' | translate }}</mat-label>
       <input matInput formControlName="name"/>
     </mat-form-field>
 
     <mat-form-field *ngIf="!roomInfo.hasName || roomInfo.hasPassword" class="w-35">
-      <mat-label>Password</mat-label>
+      <mat-label>{{ 'room.roomPassword' | translate }}</mat-label>
       <input matInput formControlName="password" [type]="hide() ? 'password' : 'text'"/>
       <button
         mat-icon-button
@@ -27,7 +27,7 @@
     </mat-form-field>
 
     <mat-form-field class="w-35">
-      <mat-label>Username</mat-label>
+      <mat-label>{{ 'room.username' | translate }}</mat-label>
       <input matInput formControlName="username"/>
     </mat-form-field>
 
@@ -35,7 +35,7 @@
             (click)="startCall()"
             [disabled]="joinForm.invalid"
             class="w-35"
-    >Se connecter
+    >{{ 'room.joinCall' | translate }}
     </button>
   </div>
 
