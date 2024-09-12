@@ -10,6 +10,7 @@ import {Room} from "../../interfaces/Room";
 import {ErrorMessages} from "../../enum/ErrorMessages";
 import {BehaviorSubject} from "rxjs";
 import {RoomInfo} from "../../interfaces/RoomInfo";
+import {GAIN} from "../../util/Constants";
 
 @Injectable({
   providedIn: 'root',
@@ -23,8 +24,8 @@ export class WebRTCService {
   public producers: Map<string, Producer> = new Map();
   public room: Room;
   public username: string;
-  public masterGain = 1;
-  public soundMuted = false;
+  public masterGain: number = GAIN.BASE;
+  public soundMuted: boolean = false;
 
   public connected = new BehaviorSubject<boolean>(false);
 
@@ -204,11 +205,10 @@ export class WebRTCService {
         const source = audioContext.createMediaStreamSource(stream);
         source.connect(gainNode);
         gainNode.connect(audioContext.destination);
+
         if (this.producers.has(producer.id)) {
           this.producers.get(producer.id)!.gainNode = gainNode;
         }
-
-        audio.play().catch(error => console.error('Error playing audio:', error));
       });
     } else {
       console.error('Cannot consume your own media');
@@ -270,9 +270,17 @@ export class WebRTCService {
   }
 
   updateMasterGain(value: number) {
+    const volumeDifference = value - this.masterGain;
+    this.masterGain = value;
     this.producers.forEach((producer) => {
       if (producer.gainNode) {
-        producer.gainNode.gain.value = value;
+        if (producer.gainNode.gain.value + volumeDifference > GAIN.MAX_VALUE) {
+          producer.gainNode.gain.value = GAIN.MAX_VALUE;
+        } else if (producer.gainNode.gain.value + volumeDifference < GAIN.MIN_VALUE) {
+          producer.gainNode.gain.value = GAIN.MIN_VALUE;
+        } else {
+          producer.gainNode.gain.value = producer.gainNode.gain.value + volumeDifference;
+        }
       }
     });
     localStorage.setItem('masterGain', value.toString());

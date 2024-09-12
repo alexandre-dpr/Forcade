@@ -4,6 +4,7 @@ import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
 import {MatSlider, MatSliderThumb} from "@angular/material/slider";
 import {FormsModule} from "@angular/forms";
 import {MatIcon} from "@angular/material/icon";
+import {GAIN} from "../../util/Constants";
 
 @Component({
   selector: 'app-call',
@@ -22,8 +23,9 @@ import {MatIcon} from "@angular/material/icon";
 })
 export class CallComponent {
 
+  protected readonly GAIN = GAIN;
+
   constructor(public webRTCService: WebRTCService) {
   }
-
 
 }

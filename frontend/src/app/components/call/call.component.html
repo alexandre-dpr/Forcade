@@ -5,7 +5,7 @@
     <ng-container *ngFor="let producer of webRTCService.producers | keyvalue">
       <li>
         {{producer.value.username}} - {{producer.value.id}}
-        <mat-slider min="-1" max="10" showTickMarks discrete>
+        <mat-slider [min]="GAIN.MIN_VALUE" [max]="GAIN.MAX_VALUE" showTickMarks discrete>
           <input matSliderThumb
                  [ngModel]="producer.value.gainNode?.gain?.value"
                  (ngModelChange)="webRTCService.updateGain(producer.key, $event)"
@@ -23,7 +23,7 @@
       volume_off
     </mat-icon>
 
-    <mat-slider min="-1" max="10" showTickMarks discrete>
+    <mat-slider [min]="GAIN.MIN_VALUE" [max]="GAIN.MAX_VALUE" showTickMarks discrete>
       <input matSliderThumb
              [ngModel]="webRTCService.masterGain"
              (ngModelChange)="webRTCService.updateMasterGain($event)"
