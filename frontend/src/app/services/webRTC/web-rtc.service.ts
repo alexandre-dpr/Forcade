@@ -11,6 +11,8 @@ import {ErrorMessages} from "../../enum/ErrorMessages";
 import {BehaviorSubject} from "rxjs";
 import {RoomInfo} from "../../interfaces/RoomInfo";
 import {GAIN} from "../../util/Constants";
+import {NotificationService} from "../notificationService/notification.service";
+import {TranslateService} from "@ngx-translate/core";
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +31,7 @@ export class WebRTCService {
 
   public connected = new BehaviorSubject<boolean>(false);
 
-  constructor(private audioService: AudioService) {
+  constructor(private audioService: AudioService, private notificationService: NotificationService, private translateService: TranslateService) {
     this.socket = io(`https://${window.location.hostname}:3000`, {
       transports: ['websocket'],
       secure: true,
@@ -248,6 +250,7 @@ export class WebRTCService {
       if (callback) {
         callback(data.error);
       } else {
+        this.notificationService.showNotification(this.translateService.instant(data.error), 'error');
         throw new Error(data.error);
       }
     }

@@ -1,6 +1,7 @@
 {
   "common": {
-    "appName": "Forcade"
+    "appName": "Forcade",
+    "errorOccurred": "Une erreur est survenue"
   },
   "home": {
     "startCall": "Démarrer l'appel"
@@ -11,6 +12,11 @@
     "roomNamePlaceholder": "Salle de discussion",
     "roomPassword": "Mot de passe",
     "username": "Nom d'utilisateur",
-    "joinCall": "Rejoindre l'appel"
+    "joinCall": "Rejoindre l'appel",
+    "error": {
+      "wrongPassword": "Mot de passe incorrect",
+      "connexionError": "Erreur de connexion",
+      "notInitialized": "Erreur de connexion"
+    }
   }
 }
